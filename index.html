@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>지앤미술관</title>
-  <link rel="manifest" href="/gn-timer-v2/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
@@ -12,6 +11,12 @@ h1{text-align:center;font-size:20px;margin:6px 0;}
 #rooms{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px;}
 .room{background:#111;border:3px solid #333;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:6px;}
 .room h3{margin:0;text-align:center;}
+.room.active{
+  border-color:#ffeb3b; /* 시작 후 노랑 */
+}
+.room.warning{
+  border-color:#f44336; /* 10분 전부터 빨강 */
+}
 .time{font-size:26px;text-align:center;font-weight:bold;}
 .starttime{text-align:center;background:#222;border-radius:10px;padding:6px;}
 .buttons{display:flex;gap:6px;}
@@ -77,6 +82,7 @@ function startRoom(n){
     timer:setInterval(()=>updateRoom(n),1000)
   };
   document.getElementById(`start${n}`).textContent=`시작시간 ${nowLabel()}`;
+document.getElementById(`room${n}`).classList.add("active");
   speak(`${n}번 룸이 시작되었습니다`);
 }
 
@@ -94,10 +100,16 @@ function updateRoom(n){
 
   document.getElementById(`time${n}`).textContent=format(remain);
 
-  if(!r.warned && remain<=WARN_BEFORE){
-    r.warned=true;
-    speak(`${n}번 룸 마감 10분 전입니다`);
-  }
+if(!r.warned && remain<=WARN_BEFORE){
+  r.warned=true;
+
+  const roomEl=document.getElementById(`room${n}`);
+  roomEl.classList.remove("active");
+  roomEl.classList.add("warning");
+
+  speak(`${n}번 룸 마감 10분 전입니다`);
+}
+
 }
 
 /* ===== 시작시간 수정 ===== */
@@ -147,6 +159,7 @@ function cancelRoom(n,voice=true){
   delete rooms[n];
   document.getElementById(`time${n}`).textContent="대기";
   document.getElementById(`start${n}`).textContent="시작시간 --:--";
+document.getElementById(`room${n}`).classList.remove("active","warning");
   if(voice)speak(`${n}번 룸이 취소되었습니다`);
 }
 
@@ -154,7 +167,7 @@ function cancelRoom(n,voice=true){
 const roomsDiv=document.getElementById("rooms");
 for(let i=1;i<=ROOM_COUNT;i++){
   roomsDiv.innerHTML+=`
-  <div class="room">
+  <div class="room" id="room${i}">
     <h3>${i}번</h3>
     <div class="time" id="time${i}">대기</div>
     <div class="starttime" id="start${i}" onclick="openTimePicker(${i})">시작시간 --:--</div>
@@ -168,13 +181,5 @@ for(let i=1;i<=ROOM_COUNT;i++){
 for(let i=0;i<=12;i++)pickHour.innerHTML+=`<option>${i}</option>`;
 for(let i=0;i<60;i++)pickMin.innerHTML+=`<option>${String(i).padStart(2,'0')}</option>`;
 </script>
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js");
-}
-</script>
-
 </body>
 </html>
-
-
