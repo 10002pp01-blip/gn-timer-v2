@@ -167,5 +167,12 @@ for(let i=1;i<=ROOM_COUNT;i++){
 for(let i=0;i<=12;i++)pickHour.innerHTML+=`<option>${i}</option>`;
 for(let i=0;i<60;i++)pickMin.innerHTML+=`<option>${String(i).padStart(2,'0')}</option>`;
 </script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js");
+}
+</script>
+
 </body>
 </html>
+
