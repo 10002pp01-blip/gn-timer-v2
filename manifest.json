@@ -1,19 +1,19 @@
 {
   "name": "지앤미술관 룸타이머",
   "short_name": "지앤미술관",
-  "start_url": "./index.html",
+  "start_url": "/gn-timer-v2/",
+  "scope": "/gn-timer-v2/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
-  "orientation": "portrait",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/gn-timer-v2/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icon-512.png",
+      "src": "/gn-timer-v2/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
