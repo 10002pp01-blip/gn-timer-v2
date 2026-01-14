@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>지앤미술관</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+<style>
+html,body{margin:0;padding:0;background:#000;color:#fff;font-family:sans-serif;}
+h1{text-align:center;font-size:20px;margin:6px 0;}
+#rooms{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px;}
+.room{background:#111;border:3px solid #333;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:6px;}
+.room h3{margin:0;text-align:center;}
+.time{font-size:26px;text-align:center;font-weight:bold;}
+.starttime{text-align:center;background:#222;border-radius:10px;padding:6px;}
+.buttons{display:flex;gap:6px;}
+button{flex:1;font-size:16px;padding:10px;border:none;border-radius:12px;font-weight:bold;}
+.start{background:#ff9800;color:#000;}
+.extend{background:#4caf50;}
+.cancel{background:#f44336;}
+#timePicker{display:none;position:fixed;inset:0;background:#000c;}
+#pickerBox{background:#222;margin:30% auto;width:280px;padding:20px;border-radius:16px;text-align:center;}
+#pickerBox select{font-size:28px;}
+</style>
+</head>
+
+<body>
+<h1>지앤미술관</h1>
+<div id="rooms"></div>
+
+<div id="timePicker">
+  <div id="pickerBox">
+    <select id="pickHour"></select> :
+    <select id="pickMin"></select><br><br>
+    <button onclick="applyTime()">적용</button>
+    <button onclick="closePicker()">취소</button>
+  </div>
+</div>
+
+<script>
+const ROOM_COUNT=9;
+const BASE_TIME=120*60*1000;
+const WARN_BEFORE=10*60*1000;
+const EXTEND_TIME=60*60*1000;
+
+const rooms={};
+let editingRoom=null;
+
+function speak(t){
+  const u=new SpeechSynthesisUtterance(t);
+  u.lang="ko-KR";
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+function nowMs(){ return Date.now(); }
+
+function nowLabel(){
+  const d=new Date();
+  let h=d.getHours()%12; if(h===0)h=12;
+  return `${String(h).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function format(ms){
+  const t=Math.max(0,Math.floor(ms/1000));
+  return `${String(Math.floor(t/3600)).padStart(2,'0')}:${String(Math.floor(t%3600/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
+}
+
+/* ===== 시작 ===== */
+function startRoom(n){
+  if(rooms[n]) return;
+  rooms[n]={
+    startBase: nowMs(),
+    extend: 0,
+    warned:false,
+    timer:setInterval(()=>updateRoom(n),1000)
+  };
+  document.getElementById(`start${n}`).textContent=`시작시간 ${nowLabel()}`;
+  speak(`${n}번 룸이 시작되었습니다`);
+}
+
+/* ===== 업데이트 ===== */
+function updateRoom(n){
+  const r=rooms[n]; if(!r)return;
+  const elapsed = nowMs() - r.startBase;
+  let remain = BASE_TIME + r.extend - elapsed;
+
+  if(remain<=0){
+    speak(`${n}번 룸 시간이 종료되었습니다`);
+    cancelRoom(n,false);
+    return;
+  }
+
+  document.getElementById(`time${n}`).textContent=format(remain);
+
+  if(!r.warned && remain<=WARN_BEFORE){
+    r.warned=true;
+    speak(`${n}번 룸 마감 10분 전입니다`);
+  }
+}
+
+/* ===== 시작시간 수정 ===== */
+function openTimePicker(n){
+  editingRoom=n;
+  const d=new Date();
+  let h=d.getHours()%12; if(h===0)h=12;
+  pickHour.value=h;
+  pickMin.value=String(d.getMinutes()).padStart(2,'0');
+  timePicker.style.display="block";
+}
+
+function applyTime(){
+  const r=rooms[editingRoom];
+  if(!r){closePicker();return;}
+
+  const selH=parseInt(pickHour.value);
+  const selM=parseInt(pickMin.value);
+
+  const d=new Date();
+  let curH=d.getHours()%12; if(curH===0)curH=12;
+  const curM=d.getMinutes();
+
+  const diffMin=(curH*60+curM)-(selH*60+selM);
+  r.startBase = nowMs() - diffMin*60*1000;
+
+  document.getElementById(`start${editingRoom}`).textContent=
+    `시작시간 ${String(selH).padStart(2,'0')}:${String(selM).padStart(2,'0')}`;
+
+  r.warned=false;
+  closePicker();
+}
+
+function closePicker(){timePicker.style.display="none";}
+
+/* ===== 연장 ===== */
+function extendRoom(n){
+  if(!rooms[n])return;
+  rooms[n].extend+=EXTEND_TIME;
+  speak(`${n}번 룸 1시간 연장되었습니다`);
+}
+
+/* ===== 취소 ===== */
+function cancelRoom(n,voice=true){
+  if(!rooms[n])return;
+  clearInterval(rooms[n].timer);
+  delete rooms[n];
+  document.getElementById(`time${n}`).textContent="대기";
+  document.getElementById(`start${n}`).textContent="시작시간 --:--";
+  if(voice)speak(`${n}번 룸이 취소되었습니다`);
+}
+
+/* ===== UI ===== */
+const roomsDiv=document.getElementById("rooms");
+for(let i=1;i<=ROOM_COUNT;i++){
+  roomsDiv.innerHTML+=`
+  <div class="room">
+    <h3>${i}번</h3>
+    <div class="time" id="time${i}">대기</div>
+    <div class="starttime" id="start${i}" onclick="openTimePicker(${i})">시작시간 --:--</div>
+    <div class="buttons">
+      <button class="start" onclick="startRoom(${i})">시작</button>
+      <button class="extend" onclick="extendRoom(${i})">+1h</button>
+      <button class="cancel" onclick="cancelRoom(${i})">취소</button>
+    </div>
+  </div>`;
+}
+for(let i=0;i<=12;i++)pickHour.innerHTML+=`<option>${i}</option>`;
+for(let i=0;i<60;i++)pickMin.innerHTML+=`<option>${String(i).padStart(2,'0')}</option>`;
+</script>
+</body>
+</html>
