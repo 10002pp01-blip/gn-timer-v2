@@ -83,7 +83,7 @@ function startRoom(n){
   };
   document.getElementById(`start${n}`).textContent=`시작시간 ${nowLabel()}`;
 document.getElementById(`room${n}`).classList.add("active");
-  speak(`${n}번 룸이 시작되었습니다`);
+  speak(`${n}번, 시작되었습니다`);
 }
 
 /* ===== 업데이트 ===== */
@@ -93,7 +93,7 @@ function updateRoom(n){
   let remain = BASE_TIME + r.extend - elapsed;
 
   if(remain<=0){
-    speak(`${n}번 룸 시간이 종료되었습니다`);
+    speak(`${n}번, 시간이 종료되었습니다`);
     cancelRoom(n,false);
     return;
   }
@@ -107,7 +107,7 @@ if(!r.warned && remain<=WARN_BEFORE){
   roomEl.classList.remove("active");
   roomEl.classList.add("warning");
 
-  speak(`${n}번 룸 마감 10분 전입니다`);
+  speak(`${n}번, 마감 10분 전입니다`);
 }
 
 }
@@ -149,7 +149,7 @@ function closePicker(){timePicker.style.display="none";}
 function extendRoom(n){
   if(!rooms[n])return;
   rooms[n].extend+=EXTEND_TIME;
-  speak(`${n}번 룸 1시간 연장되었습니다`);
+  speak(`${n}번, 1시간 연장되었습니다`);
 }
 
 /* ===== 취소 ===== */
@@ -160,7 +160,7 @@ function cancelRoom(n,voice=true){
   document.getElementById(`time${n}`).textContent="대기";
   document.getElementById(`start${n}`).textContent="시작시간 --:--";
 document.getElementById(`room${n}`).classList.remove("active","warning");
-  if(voice)speak(`${n}번 룸이 취소되었습니다`);
+  if(voice)speak(`취소`);
 }
 
 /* ===== UI ===== */
@@ -183,3 +183,4 @@ for(let i=0;i<60;i++)pickMin.innerHTML+=`<option>${String(i).padStart(2,'0')}</o
 </script>
 </body>
 </html>
+
