@@ -7,49 +7,20 @@
 
 <style>
 html,body{margin:0;padding:0;background:#000;color:#fff;font-family:sans-serif;}
-
-/* ===== 상단 시계 ===== */
-#clock{
-  text-align:center;
-  font-size:16px;
-  padding:8px 0;
-  background:#000;
-  border-bottom:1px solid #222;
-}
-
+#clock{text-align:center;font-size:16px;padding:8px 0;background:#000;border-bottom:1px solid #222;}
 #rooms{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px;}
-
-.room{
-  background:#111;
-  border:3px solid #333;
-  border-radius:14px;
-  padding:10px;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-}
+.room{background:#111;border:3px solid #333;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:6px;}
 .room h3{margin:0;text-align:center;}
-
-.room.active{ border-color:#ffeb3b; }
-.room.warning{ border-color:#f44336; }
-.room.extended{ border-color:#4caf50; }
-
+.room.active{border-color:#ffeb3b;}
+.room.warning{border-color:#f44336;}
+.room.extended{border-color:#4caf50;}
 .time{font-size:26px;text-align:center;font-weight:bold;}
 .starttime{text-align:center;background:#222;border-radius:10px;padding:6px;}
 .buttons{display:flex;gap:6px;}
-
-button{
-  flex:1;
-  font-size:16px;
-  padding:10px;
-  border:none;
-  border-radius:12px;
-  font-weight:bold;
-}
+button{flex:1;font-size:16px;padding:10px;border:none;border-radius:12px;font-weight:bold;}
 .start{background:#ff9800;color:#000;}
 .extend{background:#4caf50;color:#000;}
 .cancel{background:#f44336;color:#000;}
-
 #timePicker{display:none;position:fixed;inset:0;background:#000c;}
 #pickerBox{background:#222;margin:30% auto;width:280px;padding:20px;border-radius:16px;text-align:center;}
 #pickerBox select{font-size:28px;}
@@ -58,9 +29,7 @@ button{
 
 <body>
 
-<!-- 📅 현재 날짜 / 시간 -->
 <div id="clock"></div>
-
 <div id="rooms"></div>
 
 <div id="timePicker">
@@ -73,23 +42,15 @@ button{
 </div>
 
 <script>
-/* ===== 상단 시계 ===== */
 function updateClock(){
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = d.getMonth()+1;
-  const day = d.getDate();
-  const h = d.getHours();
-  const min = d.getMinutes();
-
-  document.getElementById("clock").textContent =
-    `${y}년 ${String(m).padStart(2,'0')}월 ${String(day).padStart(2,'0')}일 ` +
-    `${String(h).padStart(2,'0')}시 ${String(min).padStart(2,'0')}분`;
+  const d=new Date();
+  clock.textContent=
+    `${d.getFullYear()}년 ${String(d.getMonth()+1).padStart(2,'0')}월 ${String(d.getDate()).padStart(2,'0')}일 `
+   +`${String(d.getHours()).padStart(2,'0')}시 ${String(d.getMinutes()).padStart(2,'0')}분`;
 }
 updateClock();
-setInterval(updateClock, 60000);
+setInterval(updateClock,60000);
 
-/* ===== 기존 로직 ===== */
 const ROOM_COUNT=9;
 const BASE_TIME=120*60*1000;
 const WARN_BEFORE=10*60*1000;
@@ -98,14 +59,14 @@ const EXTEND_TIME=60*60*1000;
 const rooms={};
 let editingRoom=null;
 
+function nowMs(){return Date.now();}
+
 function speak(t){
   const u=new SpeechSynthesisUtterance(t);
   u.lang="ko-KR";
   speechSynthesis.cancel();
   speechSynthesis.speak(u);
 }
-
-function nowMs(){ return Date.now(); }
 
 function nowLabel(){
   const d=new Date();
@@ -118,12 +79,11 @@ function format(ms){
   return `${String(Math.floor(t/3600)).padStart(2,'0')}:${String(Math.floor(t%3600/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
 }
 
-/* ===== 시작 ===== */
 function startRoom(n){
-  if(rooms[n]) return;
+  if(rooms[n])return;
   rooms[n]={
-    startBase: nowMs(),
-    extend: 0,
+    startBase:nowMs(),
+    extend:0,
     warned:false,
     timer:setInterval(()=>updateRoom(n),1000)
   };
@@ -132,30 +92,24 @@ function startRoom(n){
   speak(`${n}룸, 시작되었습니다`);
 }
 
-/* ===== 업데이트 ===== */
 function updateRoom(n){
   const r=rooms[n]; if(!r)return;
-  const elapsed = nowMs() - r.startBase;
-  let remain = BASE_TIME + r.extend - elapsed;
-
+  const remain=BASE_TIME+r.extend-(nowMs()-r.startBase);
   if(remain<=0){
     speak(`${n}룸, 시간이 종료되었습니다`);
     cancelRoom(n,false);
     return;
   }
-
   document.getElementById(`time${n}`).textContent=format(remain);
-
   if(!r.warned && remain<=WARN_BEFORE){
     r.warned=true;
-    const roomEl=document.getElementById(`room${n}`);
-    roomEl.classList.remove("active","extended");
-    roomEl.classList.add("warning");
+    const el=document.getElementById(`room${n}`);
+    el.classList.remove("active","extended");
+    el.classList.add("warning");
     speak(`${n}룸, 마감 10분 전입니다`);
   }
 }
 
-/* ===== 시작시간 수정 ===== */
 function openTimePicker(n){
   editingRoom=n;
   const d=new Date();
@@ -172,12 +126,17 @@ function applyTime(){
   const selH=parseInt(pickHour.value);
   const selM=parseInt(pickMin.value);
 
-  const d=new Date();
-  let curH=d.getHours()%12; if(curH===0)curH=12;
-  const curM=d.getMinutes();
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes();
+  let selMin=(selH%12)*60+selM;
 
-  const diffMin=(curH*60+curM)-(selH*60+selM);
-  r.startBase = nowMs() - diffMin*60*1000;
+  if(nowMin-selMin>360) selMin+=720;
+  if(selMin-nowMin>360) selMin-=720;
+
+  const elapsed=nowMs()-r.startBase;
+  const diffMs=(nowMin-selMin)*60000;
+
+  r.startBase=nowMs()-diffMs-elapsed;
 
   document.getElementById(`start${editingRoom}`).textContent=
     `시작시간 ${String(selH).padStart(2,'0')}:${String(selM).padStart(2,'0')}`;
@@ -188,17 +147,15 @@ function applyTime(){
 
 function closePicker(){timePicker.style.display="none";}
 
-/* ===== 연장 ===== */
 function extendRoom(n){
   if(!rooms[n])return;
   rooms[n].extend+=EXTEND_TIME;
-  const roomEl=document.getElementById(`room${n}`);
-  roomEl.classList.remove("active","warning");
-  roomEl.classList.add("extended");
+  const el=document.getElementById(`room${n}`);
+  el.classList.remove("active","warning");
+  el.classList.add("extended");
   speak(`${n}룸, 1시간 연장되었습니다`);
 }
 
-/* ===== 취소 ===== */
 function cancelRoom(n,voice=true){
   if(!rooms[n])return;
   clearInterval(rooms[n].timer);
@@ -209,7 +166,6 @@ function cancelRoom(n,voice=true){
   if(voice)speak(`취소되었습니다.`);
 }
 
-/* ===== UI ===== */
 const roomsDiv=document.getElementById("rooms");
 for(let i=1;i<=ROOM_COUNT;i++){
   roomsDiv.innerHTML+=`
